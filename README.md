@@ -36,3 +36,4 @@ Thanks to [Itamarcu](https://github.com/itamarcu), you can now create Actorless 
 ### v1.4.1
 We now integrate with the upcoming Isometric module!
 ![](./draguploadiso.gif)
+
