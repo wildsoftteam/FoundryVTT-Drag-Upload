@@ -18,23 +18,3 @@ Otherwise, it will be treated as an Image and created based on the current activ
 * Tile: Tile of the same size as the image
 * Notes: Journal with a corresponding Journal Pin
 * Other: Same as Token
-
-
-## Changelog
-
-### v1.1.0
-* https://github.com/cswendrowski/FoundryVTT-Drag-Upload/issues/1 - Added full support for all audio types (except WEBM, because that's almost always an animated image)
-* https://github.com/cswendrowski/FoundryVTT-Drag-Upload/issues/2 - When WEBM is dragged, only set the Token and not the Actor
-
-### v1.2.0
-Thanks to [Itamarcu](https://github.com/itamarcu) for this wonderful addition!
-You can now drag upload images straight from a webbrowser. **This is not supported in Firefox**
-![](./draguploadfromweb.gif)
-
-### v1.3.0
-Thanks to [Itamarcu](https://github.com/itamarcu), you can now create Actorless tokens!
-
-### v1.4.1
-We now integrate with the upcoming Isometric module!
-![](./draguploadiso.gif)
-
