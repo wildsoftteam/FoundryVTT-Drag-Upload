@@ -1,5 +1,5 @@
-![](https://img.shields.io/badge/Foundry-v0.7.2-informational)
-[![](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-%243-orange)](https://www.buymeacoffee.com/T2tZvWJ)
+![](https://img.shields.io/badge/Foundry-v11-informational)
+
 This is a fork of [the original unmaintained module](https://github.com/cswendrowski/FoundryVTT-Drag-Upload)
 
 # Drag Upload (maintained for)
