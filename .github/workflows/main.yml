@@ -44,4 +44,4 @@ jobs:
         prerelease: false
         token: ${{ secrets.GITHUB_TOKEN }}
         artifacts: './module.json,./module.zip'
-        tag: Latest
+        tag: latest
