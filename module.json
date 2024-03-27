@@ -3,7 +3,7 @@
   "id": "dragupload2",
   "title": "Drag Upload (maintained fork)",
   "description": "Adds the ability to drag files onto Foundry to automatically create Tokens, Tiles, Journal Pins, and Ambient Audio",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "minimumCoreVersion": "9",
   "compatibleCoreVersion": "11",
   "compatibility" : {
