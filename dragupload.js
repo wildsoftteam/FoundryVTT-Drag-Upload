@@ -156,7 +156,9 @@ async function handleDrop(event) {
     }
 
     // file.path won't be set if it's an image dragged from within foundry itself instead of dragged from the OS
-    if (file == undefined || !file.path) {
+    if (file == undefined) {
+        console.log("Drag Upload | No Files detected");
+
         // Let Foundry handle the event instead
         canvas._onDrop(event);
         return;
@@ -225,12 +227,14 @@ async function CreateTile(event, file, overhead) {
     } else {
         response = await FilePicker.upload(source, window.dragUpload.targetFolder + "/tiles", file, source === "s3" ? {bucket: game.settings.get("dragupload", "fileUploadBucket")} : {});
     }
-    console.log(response);
 
     const data = CreateImgData(event, response);
 
     const tex = await loadTexture(data.img);
     const ratio = canvas.dimensions.size / (data.tileSize || canvas.dimensions.size);
+    data.texture = {
+        src: data.img
+    }
     data.width = tex.baseTexture.width * ratio;
     data.height = tex.baseTexture.height * ratio;
     data.overhead = overhead;
