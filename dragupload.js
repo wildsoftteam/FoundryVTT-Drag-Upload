@@ -369,55 +369,45 @@ async function CreateActorWithType(event, data, tokenImageData, type) {
         type: createdType,
         img: data.img
     });
-    const actorData = foundry.utils.duplicate(actor.data);
+
+    let prototypeToken;
+    let actorId;
+    if (game.release?.generation <= 9) {
+        prototypeToken = actor.data.token;
+        actorId = actor.data._id;
+    } else {
+        prototypeToken = actor.prototypeToken;
+        actorId = actor._id;
+    }
 
     // Prepare Token data specific to this placement
-    const td = actor.data.token;
     const hg = canvas.dimensions.size / 2;
-    data.x -= (td.width * hg);
-    data.y -= (td.height * hg);
+    data.x -= (prototypeToken.width * hg);
+    data.y -= (prototypeToken.height * hg);
 
-    let tokenData;
-    if ( game.release?.generation <= 9 ) {
-        // Snap the dropped position and validate that it is in-bounds
-        tokenData = { x: data.x, y: data.y, hidden: event.altKey, img: tokenImageData.img };
-        if ( !event.shiftKey ) foundry.utils.mergeObject(tokenData, canvas.grid.getSnappedPosition(data.x, data.y, 1));
-        if ( !canvas.grid.hitArea.contains(tokenData.x, tokenData.y) ) return false;
+    let tokenData = { x: data.x, y: data.y, hidden: event.altKey, img: tokenImageData.img };
 
-        // Get the Token image
-        if ( actorData.token.randomImg ) {
-            let images = await actor.getTokenImages();
-            images = images.filter(i => (images.length === 1) || !(i === this._lastWildcard));
-            const image = images[Math.floor(Math.random() * images.length)];
-            tokenData.img = this._lastWildcard = image;
-        }
-
-        // Merge Token data with the default for the Actor
-        tokenData = foundry.utils.mergeObject(actorData.token, tokenData, {inplace: true});
-        tokenData.actorId = actor.data._id;
-        tokenData.actorLink = true;
-    }
-    else {
-        // Snap the dropped position and validate that it is in-bounds
-        tokenData = { x: data.x, y: data.y, hidden: event.altKey, img: tokenImageData.img };
-        if ( !event.shiftKey ) foundry.utils.mergeObject(tokenData, canvas.grid.getSnappedPosition(data.x, data.y, 1));
+    // Snap the dropped position and validate that it is in-bounds
+    if ( !event.shiftKey ) foundry.utils.mergeObject(tokenData, canvas.grid.getSnappedPosition(data.x, data.y, 1));
+    if ( game.release?.generation <= 9 && !canvas.grid.hitArea.contains(tokenData.x, tokenData.y) ) return false;
+    if ( game.release?.generation > 9 ) {
         const d = canvas.dimensions;
         tokenData.x = Math.clamped(tokenData.x, 0, d.width-1);
         tokenData.y = Math.clamped(tokenData.y, 0, d.height-1);
-
-        // Get the Token image
-        if ( actorData.prototypeToken.randomImg ) {
-            let images = await actor.getTokenImages();
-            images = images.filter(i => (images.length === 1) || !(i === this._lastWildcard));
-            const image = images[Math.floor(Math.random() * images.length)];
-            tokenData.img = this._lastWildcard = image;
-        }
-
-        // Merge Token data with the default for the Actor
-        tokenData = foundry.utils.mergeObject(actorData.prototypeToken, tokenData, {inplace: true});
-        tokenData.actorId = actor.data._id;
-        tokenData.actorLink = true;
     }
+
+    // Get the Token image
+    if ( prototypeToken.randomImg ) {
+        let images = await actor.getTokenImages();
+        images = images.filter(i => (images.length === 1) || !(i === this._lastWildcard));
+        const image = images[Math.floor(Math.random() * images.length)];
+        tokenData.img = this._lastWildcard = image;
+    }
+
+    // Merge Token data with the default for the Actor
+    tokenData = foundry.utils.mergeObject(foundry.utils.duplicate(prototypeToken), tokenData, {inplace: true});
+    tokenData.actorId = actorId;
+    tokenData.actorLink = true;
 
     // Submit the Token creation request and activate the Tokens layer (if not already active)
     canvas.getLayerByEmbeddedName("Token").activate();
