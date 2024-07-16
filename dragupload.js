@@ -104,15 +104,18 @@ async function createFolderIfMissing(folderPath) {
 
 async function handlePlaylistDrop(event) {
     event.preventDefault();
-    console.log(event);
+    console.debug("Got handlePlaylistDrop event:");
+    console.debug(event);
 }
 
 async function handleDrop(event) {
     event.preventDefault();
-    console.log(event);
+    console.debug("Got handleDrop event:");
+    console.debug(event);
 
     const files = event.dataTransfer.files;
-    console.log(files);
+    console.debug("FileList is: ");
+    console.debug(files);
 
     let file
     if (!files || files.length === 0) {
@@ -163,7 +166,8 @@ async function handleDrop(event) {
         canvas._onDrop(event);
         return;
     }
-    console.log(file);
+    console.debug("file is: ");
+    console.debug(file);
 
     if (Object.keys(CONST.AUDIO_FILE_EXTENSIONS).filter(x => x != "webm" && file.name.endsWith(x)).length > 0) {
         await HandleAudioFile(event, file);
@@ -190,7 +194,7 @@ async function handleDrop(event) {
 }
 
 async function HandleAudioFile(event, file) {
-    console.log(file.name + " is an audio file");
+    console.debug(file.name + " is an audio file");
 
     await CreateAmbientAudio(event, file);
 }
@@ -275,7 +279,8 @@ async function CreateJournalPin(event, file) {
     } else {
         response = await FilePicker.upload(source, window.dragUpload.targetFolder + "/journals", file, source === "s3" ? {bucket: game.settings.get("dragupload", "fileUploadBucket")} : {});
     }
-    console.log(response);
+    console.debug("Got response: ");
+    console.debug(response);
 
     const data = {
         name: file.name,
@@ -283,7 +288,8 @@ async function CreateJournalPin(event, file) {
     };
 
     const journal = await JournalEntry.create(data);
-    console.log(journal);
+    console.debug("Created journal entry: ");
+    console.debug(journal);
 
     const pinData = {
         entryId: journal.id,
@@ -309,7 +315,8 @@ async function CreateActor(event, file) {
     } else {
         response = await FilePicker.upload(source, window.dragUpload.targetFolder + "/tokens", file, source === "s3" ? {bucket: game.settings.get("dragupload", "fileUploadBucket")} : {});
     }
-    console.log(response);
+    console.debug("Got response: ");
+    console.debug(response);
 
     const data = CreateImgData(event, response);
     data.name = file.name;
@@ -334,7 +341,8 @@ async function CreateActor(event, file) {
             default: types[0],
             close: () => {}
            });
-           console.log(d);
+           console.debug("Creating dialog: ");
+           console.debug(d);
 
            types.forEach(x => {
             d.data.buttons[x] = {
@@ -439,5 +447,6 @@ function convertXYtoCanvas(data, event) {
 
     // Allow other modules to overwrite this, such as Isometric
     Hooks.callAll("dragDropPositioning", { event: event, data: data });
-    console.log(data);
+    console.debug("Converted x/y values to canvas: ");
+    console.debug(data);
 }
