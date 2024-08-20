@@ -104,15 +104,18 @@ async function createFolderIfMissing(folderPath) {
 
 async function handlePlaylistDrop(event) {
     event.preventDefault();
-    console.log(event);
+    console.debug("Got handlePlaylistDrop event:");
+    console.debug(event);
 }
 
 async function handleDrop(event) {
     event.preventDefault();
-    console.log(event);
+    console.debug("Got handleDrop event:");
+    console.debug(event);
 
     const files = event.dataTransfer.files;
-    console.log(files);
+    console.debug("FileList is: ");
+    console.debug(files);
 
     let file
     if (!files || files.length === 0) {
@@ -156,12 +159,15 @@ async function handleDrop(event) {
     }
 
     // file.path won't be set if it's an image dragged from within foundry itself instead of dragged from the OS
-    if (file == undefined || !file.path) {
+    if (file == undefined) {
+        console.log("Drag Upload | No Files detected");
+
         // Let Foundry handle the event instead
         canvas._onDrop(event);
         return;
     }
-    console.log(file);
+    console.debug("file is: ");
+    console.debug(file);
 
     if (Object.keys(CONST.AUDIO_FILE_EXTENSIONS).filter(x => x != "webm" && file.name.endsWith(x)).length > 0) {
         await HandleAudioFile(event, file);
@@ -188,7 +194,7 @@ async function handleDrop(event) {
 }
 
 async function HandleAudioFile(event, file) {
-    console.log(file.name + " is an audio file");
+    console.debug(file.name + " is an audio file");
 
     await CreateAmbientAudio(event, file);
 }
@@ -225,12 +231,14 @@ async function CreateTile(event, file, overhead) {
     } else {
         response = await FilePicker.upload(source, window.dragUpload.targetFolder + "/tiles", file, source === "s3" ? {bucket: game.settings.get("dragupload", "fileUploadBucket")} : {});
     }
-    console.log(response);
 
     const data = CreateImgData(event, response);
 
     const tex = await loadTexture(data.img);
     const ratio = canvas.dimensions.size / (data.tileSize || canvas.dimensions.size);
+    data.texture = {
+        src: data.img
+    }
     data.width = tex.baseTexture.width * ratio;
     data.height = tex.baseTexture.height * ratio;
     data.overhead = overhead;
@@ -271,7 +279,8 @@ async function CreateJournalPin(event, file) {
     } else {
         response = await FilePicker.upload(source, window.dragUpload.targetFolder + "/journals", file, source === "s3" ? {bucket: game.settings.get("dragupload", "fileUploadBucket")} : {});
     }
-    console.log(response);
+    console.debug("Got response: ");
+    console.debug(response);
 
     const data = {
         name: file.name,
@@ -279,7 +288,8 @@ async function CreateJournalPin(event, file) {
     };
 
     const journal = await JournalEntry.create(data);
-    console.log(journal);
+    console.debug("Created journal entry: ");
+    console.debug(journal);
 
     const pinData = {
         entryId: journal.id,
@@ -305,7 +315,8 @@ async function CreateActor(event, file) {
     } else {
         response = await FilePicker.upload(source, window.dragUpload.targetFolder + "/tokens", file, source === "s3" ? {bucket: game.settings.get("dragupload", "fileUploadBucket")} : {});
     }
-    console.log(response);
+    console.debug("Got response: ");
+    console.debug(response);
 
     const data = CreateImgData(event, response);
     data.name = file.name;
@@ -330,7 +341,8 @@ async function CreateActor(event, file) {
             default: types[0],
             close: () => {}
            });
-           console.log(d);
+           console.debug("Creating dialog: ");
+           console.debug(d);
 
            types.forEach(x => {
             d.data.buttons[x] = {
@@ -365,55 +377,45 @@ async function CreateActorWithType(event, data, tokenImageData, type) {
         type: createdType,
         img: data.img
     });
-    const actorData = foundry.utils.duplicate(actor.data);
+
+    let prototypeToken;
+    let actorId;
+    if (game.release?.generation <= 9) {
+        prototypeToken = actor.data.token;
+        actorId = actor.data._id;
+    } else {
+        prototypeToken = actor.prototypeToken;
+        actorId = actor._id;
+    }
 
     // Prepare Token data specific to this placement
-    const td = actor.data.token;
     const hg = canvas.dimensions.size / 2;
-    data.x -= (td.width * hg);
-    data.y -= (td.height * hg);
+    data.x -= (prototypeToken.width * hg);
+    data.y -= (prototypeToken.height * hg);
 
-    let tokenData;
-    if ( game.release?.generation <= 9 ) {
-        // Snap the dropped position and validate that it is in-bounds
-        tokenData = { x: data.x, y: data.y, hidden: event.altKey, img: tokenImageData.img };
-        if ( !event.shiftKey ) foundry.utils.mergeObject(tokenData, canvas.grid.getSnappedPosition(data.x, data.y, 1));
-        if ( !canvas.grid.hitArea.contains(tokenData.x, tokenData.y) ) return false;
+    let tokenData = { x: data.x, y: data.y, hidden: event.altKey, img: tokenImageData.img };
 
-        // Get the Token image
-        if ( actorData.token.randomImg ) {
-            let images = await actor.getTokenImages();
-            images = images.filter(i => (images.length === 1) || !(i === this._lastWildcard));
-            const image = images[Math.floor(Math.random() * images.length)];
-            tokenData.img = this._lastWildcard = image;
-        }
-
-        // Merge Token data with the default for the Actor
-        tokenData = foundry.utils.mergeObject(actorData.token, tokenData, {inplace: true});
-        tokenData.actorId = actor.data._id;
-        tokenData.actorLink = true;
-    }
-    else {
-        // Snap the dropped position and validate that it is in-bounds
-        tokenData = { x: data.x, y: data.y, hidden: event.altKey, img: tokenImageData.img };
-        if ( !event.shiftKey ) foundry.utils.mergeObject(tokenData, canvas.grid.getSnappedPosition(data.x, data.y, 1));
+    // Snap the dropped position and validate that it is in-bounds
+    if ( !event.shiftKey ) foundry.utils.mergeObject(tokenData, canvas.grid.getSnappedPosition(data.x, data.y, 1));
+    if ( game.release?.generation <= 9 && !canvas.grid.hitArea.contains(tokenData.x, tokenData.y) ) return false;
+    if ( game.release?.generation > 9 ) {
         const d = canvas.dimensions;
         tokenData.x = Math.clamped(tokenData.x, 0, d.width-1);
         tokenData.y = Math.clamped(tokenData.y, 0, d.height-1);
-
-        // Get the Token image
-        if ( actorData.prototypeToken.randomImg ) {
-            let images = await actor.getTokenImages();
-            images = images.filter(i => (images.length === 1) || !(i === this._lastWildcard));
-            const image = images[Math.floor(Math.random() * images.length)];
-            tokenData.img = this._lastWildcard = image;
-        }
-
-        // Merge Token data with the default for the Actor
-        tokenData = foundry.utils.mergeObject(actorData.prototypeToken, tokenData, {inplace: true});
-        tokenData.actorId = actor.data._id;
-        tokenData.actorLink = true;
     }
+
+    // Get the Token image
+    if ( prototypeToken.randomImg ) {
+        let images = await actor.getTokenImages();
+        images = images.filter(i => (images.length === 1) || !(i === this._lastWildcard));
+        const image = images[Math.floor(Math.random() * images.length)];
+        tokenData.img = this._lastWildcard = image;
+    }
+
+    // Merge Token data with the default for the Actor
+    tokenData = foundry.utils.mergeObject(foundry.utils.duplicate(prototypeToken), tokenData, {inplace: true});
+    tokenData.actorId = actorId;
+    tokenData.actorLink = true;
 
     // Submit the Token creation request and activate the Tokens layer (if not already active)
     canvas.getLayerByEmbeddedName("Token").activate();
@@ -445,5 +447,6 @@ function convertXYtoCanvas(data, event) {
 
     // Allow other modules to overwrite this, such as Isometric
     Hooks.callAll("dragDropPositioning", { event: event, data: data });
-    console.log(data);
+    console.debug("Converted x/y values to canvas: ");
+    console.debug(data);
 }
